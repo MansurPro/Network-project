@@ -1,0 +1,133 @@
+document.addEventListener('DOMContentLoaded',  function() {
+  document.querySelector('#postsPage').style.display = 'block';
+  document.querySelector('#page-number').innerHTML = '';
+
+  fetch_post(1, "followingPosts");
+  pagination("followingPosts");
+});
+
+
+function pagination (url) {
+fetch(`/${ url }/pages`)
+.then(response => response.json())
+.then(result => {
+    if (result.pages > 1) {
+      let counter = 1;
+      let previous = document.createElement('li')
+      previous.innerHTML = `<a class="page-link" href="#" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a>`
+      previous.classList.add("page-item")
+
+      let next = document.createElement('li')
+      next.innerHTML = `<a class="page-link" href="#" aria-label="Next"><span aria-hidden="true">&raquo;</span></a>`
+      next.classList.add("page-item")
+
+      previous.addEventListener('click', function () {
+          counter--
+          fetch_post(counter, url)
+          if (counter === 1) {
+            previous.style.display = 'none'
+            next.style.display = 'block'
+          } else {
+            next.style.display = 'block'
+          }
+      })
+
+      next.addEventListener('click', function () {
+          counter++
+          fetch_post(counter, url)
+          previous.style.display = 'block';
+          next.style.display = 'block';
+          if (counter >= result.pages) {
+            previous.style.display = 'block'
+            next.style.display = 'none'
+          }
+      })
+      previous.style.display = 'none'
+      document.querySelector('#page-number').append(previous)
+      document.querySelector('#page-number').append(next)
+    }
+})
+}
+
+function fetch_post(counter, url) {
+  document.querySelector('#postsPage').innerHTML = '';
+  fetch(`/${url}/posts?page=${counter}`)
+  .then(response => response.json())
+  .then(posts => loadPosts(posts));
+}
+
+function loadPosts(posts) {
+  const pagePost = document.querySelector('#postsPage');
+  posts.forEach(post1 => {
+    const postDiv1 = document.createElement('div');
+    postDiv1.setAttribute('class', 'col-md-8');
+    postDiv1.setAttribute('id', `posts${post1.id}`);
+    const postDiv2 = document.createElement('div');
+    postDiv2.setAttribute('class', 'media g-mb-30 media-comment');
+    const postDivBody = document.createElement('div');
+    postDivBody.setAttribute('class', 'media-body u-shadow-v18 g-bg-secondary g-pa-30');
+    const postDiv = document.createElement('div');
+    postDiv.setAttribute('class', 'g-mb-15');
+
+    const postUsername = document.createElement('h5');
+    postUsername.setAttribute('class', 'h5 g-color-gray-dark-v1 mb-0');
+    const postUsernameA = document.createElement('a');
+    postUsernameA.setAttribute('class', "userNameLink");
+    postUsername.innerHTML = post1.poster;
+    postUsernameA.append(postUsername);
+    postUsernameA.setAttribute("href", `otherProfilePage/${ post1.posterId }`);
+    postDiv.append(postUsernameA);
+
+    const postTime = document.createElement('span');
+    postTime.setAttribute('class', 'g-color-gray-dark-v4 g-font-size-12');
+    postTime.innerHTML = post1.timestamp;
+    postDiv.append(postTime);
+
+    const postContent = document.createElement('p');
+    postContent.innerHTML = post1.postContent;
+
+    const postLikeUl = document.createElement('ul');
+    postLikeUl.setAttribute('class', 'list-inline d-sm-flex my-0');
+
+    const postLikeLi = document.createElement('li');
+    postLikeLi.setAttribute('class', '"list-inline-item g-mr-20');
+    const postLikeI = document.createElement('i');
+    postLikeI.setAttribute('class', 'fa fa-thumbs-up g-pos-rel g-top-1 g-mr-3');
+    const postLikeA = document.createElement('a');
+    postLikeA.setAttribute('class', 'u-link-v5 g-color-gray-dark-v4 g-color-primary--hover');
+    postLikeA.setAttribute('style', 'cursor: pointer;');
+    postLikeA.addEventListener('click', () => likeClicked(post1.id));
+    const numberLike = document.createElement('span');
+    numberLike.setAttribute('id', `like${post1.id}`);
+    numberLike.innerHTML = post1.likes
+    postLikeA.append(postLikeI, numberLike);
+    postLikeLi.append(postLikeA);
+
+    postLikeUl.append(postLikeLi)
+
+
+    postDivBody.append(postDiv, postContent, postLikeUl);
+    postDiv2.append(postDivBody);
+    postDiv1.append(postDiv2);
+    pagePost.append(postDiv1);
+  });
+}
+
+function likeClicked(post_id) {
+  const likeBtn = document.querySelector(`#like${post_id}`);
+  fetch(`allPosts/like/${ post_id }`, {
+      method: 'POST',
+  })
+  .then(response => response)
+  .then(result => {
+      // Print result
+      //console.log(result);
+      if (result.status === 202) {
+        const prev = likeBtn.innerHTML;
+        likeBtn.innerHTML = parseInt(prev) - 1;
+      } else {
+        const prev = likeBtn.innerHTML;
+        likeBtn.innerHTML = parseInt(prev) + 1;
+      }
+  }).catch(error => console.log('Error:', error));
+}

@@ -1,0 +1,11 @@
+body {
+    margin: 0;
+    padding: 0;
+}
+.body {
+    margin: 10px;
+}
+.container-fluid {
+    border: 1px rgb(189 189 189) solid;
+} 
+
